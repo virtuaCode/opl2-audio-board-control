@@ -1,0 +1,25 @@
+:host {
+  flex: 1;
+  display: flex;
+}
+
+.sidebar {
+  background: whitesmoke;
+}
+
+section.parameters {
+  margin-bottom: 5rem;
+
+  border: 2px solid black;
+}
+
+section.configuration {
+  border: 2px solid black;
+}
+
+.title {
+  text-align: center;
+  font-size: 48px;
+  font-weight: bold;
+  margin: 3rem 0;
+}

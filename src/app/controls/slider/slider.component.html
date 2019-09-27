@@ -1,0 +1,6 @@
+<div class="slider-container" fxLayout="row" fxLayoutAlign="space-between stretch">
+  <button [disabled]="!enabled" (click)="decrement()" class="slider-button left"></button>
+  <input fxFlex="grow" type="range" [min]="min" [max]="max" [formControl]="valueControl" class="slider">
+  <button [disabled]="!enabled" (click)="increment()" class="slider-button right"></button>
+  <div fxLayout="row" fxLayoutAlign="center center"><div fxFlex="grow" class="slider-info">{{valueControl.value}}</div></div>
+</div>

@@ -1,0 +1,60 @@
+/* You can add global styles to this file, and also import other style files */
+@import url('https://fonts.googleapis.com/css?family=Nunito:400,700');
+
+/* Bulma Configuration */
+$family-sans-serif: "Nunito", sans-serif;
+$text: #000;
+
+/* Imports */
+@import "bulma/sass/utilities/_all.sass";
+@import "bulma/sass/base/_all.sass";
+@import "bulma/sass/elements/container.sass";
+@import "bulma/sass/grid/columns.sass";
+
+/* Styles */
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  display: flex;
+  height: 100vh;
+}
+
+body {
+  flex: 1;
+  display: flex;
+}
+
+.ml-auto {
+  margin-left: auto;
+}
+
+.mr-auto {
+  margin-right: auto;
+}
+
+.mt-auto {
+  margin-top: auto;
+}
+
+.mb-auto {
+  margin-bottom: auto;
+}
+
+.label {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+select {
+  /*-moz-appearance: none;
+  -webkit-appearance: none;
+  appearance: none;*/
+  border: 2px solid black;
+  height: 30px;
+  width: 100%;
+  font-weight: bold;
+  font-size: 1.25rem;
+}

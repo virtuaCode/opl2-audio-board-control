@@ -1,0 +1,108 @@
+<div class="container" fxLayout="row">
+  <div class="sections" fxFlex fxLayout="column" fxLayoutAlign="center stretch">
+
+    <section>
+      <div class="title">OPL2 Audio Board Control</div>
+    </section>
+
+    <section class="columns parameters">
+      <div class="column">
+        <div class="columns">
+          <div class="column is-3">
+          </div>
+          <div class="column is-4 has-text-centered	">
+            <div class="label">Carrier</div>
+          </div>
+          <div class="column is-4 is-offset-1 has-text-centered	">
+            <div class="label">Modulator</div>
+          </div>
+        </div>
+
+        <div class="columns">
+          <div class="column is-3">
+            <div class="label">Attack Rate</div>
+          </div>
+          <div class="column is-4">
+            <app-slider min="0" max="15" default="0" [enabled]="deviceAvailable | async"
+              (value)="onAttackRateChange($event, Operators.Modulator)"></app-slider>
+          </div>
+          <div class="column is-4 is-offset-1">
+            <app-slider min="0" max="15" default="0" [enabled]="deviceAvailable | async"
+              (value)="onAttackRateChange($event, Operators.Carrier)"></app-slider>
+          </div>
+        </div>
+
+        <div class="columns">
+          <div class="column is-3">
+            <div class="label">Decay Rate</div>
+          </div>
+          <div class="column is-4">
+            <app-slider min="0" max="15" default="0" [enabled]="deviceAvailable | async"
+              (value)="onDecayRateChange($event, Operators.Modulator)"></app-slider>
+          </div>
+          <div class="column is-4 is-offset-1">
+            <app-slider min="0" max="15" default="0" [enabled]="deviceAvailable | async"
+              (value)="onDecayRateChange($event, Operators.Carrier)"></app-slider>
+          </div>
+        </div>
+
+        <div class="columns">
+          <div class="column is-3">
+            <div class="label">Sustain Level</div>
+          </div>
+          <div class="column is-4">
+            <app-slider min="0" max="15" default="0" [enabled]="deviceAvailable | async"
+              (value)="onSustainLevelChange($event, Operators.Modulator)"></app-slider>
+          </div>
+          <div class="column is-4 is-offset-1">
+            <app-slider min="0" max="15" default="0" [enabled]="deviceAvailable | async"
+              (value)="onSustainLevelChange($event, Operators.Carrier)"></app-slider>
+          </div>
+        </div>
+
+        <div class="columns">
+          <div class="column is-3">
+            <div class="label">Release Rate</div>
+          </div>
+          <div class="column is-4">
+            <app-slider min="0" max="15" default="0" [enabled]="deviceAvailable | async"
+              (value)="onReleaseRateChange($event, Operators.Modulator)"></app-slider>
+          </div>
+          <div class="column is-4 is-offset-1">
+            <app-slider min="0" max="15" default="0" [enabled]="deviceAvailable | async"
+              (value)="onReleaseRateChange($event, Operators.Carrier)"></app-slider>
+          </div>
+        </div>
+
+        <div class="columns">
+          <div class="column is-3">
+            <div class="label">Output Level</div>
+          </div>
+          <div class="column is-4">
+            <app-slider min="0" max="63" default="0" [enabled]="deviceAvailable | async"
+              (value)="onOutputLevelChange($event, Operators.Modulator)"></app-slider>
+          </div>
+          <div class="column is-4 is-offset-1">
+            <app-slider min="0" max="63" default="0" [enabled]="deviceAvailable | async"
+              (value)="onOutputLevelChange($event, Operators.Carrier)"></app-slider>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="columns configuration">
+      <div class="column is-3">
+        <div class="label">MIDI Output</div>
+      </div>
+      <div class="column is-3">
+        <select name="topics" [formControl]="devicesControl">
+          <option *ngFor="let device of devices | keyvalue" [value]="device.key">
+            {{device.value.name}}
+          </option>
+        </select>
+      </div>
+      <div class="column is-3"></div>
+      <div class="column is-3"></div>
+    </section>
+  </div>
+</div>
