@@ -3,7 +3,7 @@
 interface Instrument {
   drumChannel: number;
   feedback: number;
-  synthMode: number;
+  frequenceModulation: boolean;
   modulator: Operator;
   carrier: Operator;
 }

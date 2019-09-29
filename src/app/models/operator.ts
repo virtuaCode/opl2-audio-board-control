@@ -1,9 +1,10 @@
 interface Operator {
-  tremolo: number;
-  vibrato: number;
-  sustaining: number;
-  envelopeScaling: number;
+  tremolo: boolean;
+  vibrato: boolean;
+  sustaining: boolean;
+  envelopeScaling: boolean;
   keyScale: number;
+  frequencyMultiplier: number;
   outputLevel: number;
   attack: number;
   decay: number;

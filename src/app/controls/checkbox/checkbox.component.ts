@@ -1,26 +1,20 @@
 import { Component, OnInit, Input, Output, EventEmitter, OnDestroy } from '@angular/core';
 import { FormControl } from '@angular/forms';
-import { debounceTime, distinct, distinctUntilChanged } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 @Component({
-  selector: 'app-slider',
-  templateUrl: './slider.component.html',
-  styleUrls: ['./slider.component.scss']
+  selector: 'app-checkbox',
+  templateUrl: './checkbox.component.html',
+  styleUrls: ['./checkbox.component.scss']
 })
-export class SliderComponent implements OnInit, OnDestroy {
+export class CheckboxComponent implements OnInit, OnDestroy {
 
   @Input()
-  min = 0;
+  invert = false;
 
   @Input()
-  max = 100;
-
-  @Input()
-  default = 0;
-
-  @Input()
-  mapFn = (val: number) => val;
+  default = false;
 
   @Input()
   set enabled(value: boolean) {
@@ -33,23 +27,24 @@ export class SliderComponent implements OnInit, OnDestroy {
     }
   }
 
-  @Input()
-  set inputValue(value: number) {
-    this.valueControl.setValue(value, { emitEvent: false });
-  }
-
-  @Output()
-  value = new EventEmitter<number>();
-
-  valueControl = new FormControl();
-
-  valueChangeSub?: Subscription;
-
   get enabled() {
     return this._enabled;
   }
 
   _enabled = false;
+
+  @Input()
+  set inputValue(value: boolean) {
+    this.valueControl.setValue(value, { emitEvent: false });
+  }
+
+  @Output()
+  value = new EventEmitter<boolean>();
+
+  valueControl = new FormControl();
+
+  valueChangeSub?: Subscription;
+
   constructor() { }
 
   ngOnInit() {
@@ -57,25 +52,13 @@ export class SliderComponent implements OnInit, OnDestroy {
     this.valueChangeSub = this.valueControl.valueChanges.pipe(
       debounceTime(200),
       distinctUntilChanged()
-    ).subscribe(value => this.value.emit(value));
+    ).subscribe(value => this.value.emit(this.invert ? !value : value));
   }
 
   ngOnDestroy() {
     if (this.valueChangeSub) {
       this.valueChangeSub.unsubscribe();
     }
-  }
-
-  decrement() {
-    this.valueControl.setValue(Math.max(this.valueControl.value - 1, this.min));
-  }
-
-  increment() {
-    this.valueControl.setValue(Math.min(this.valueControl.value + 1, this.max));
-  }
-
-  get label() {
-    return this.mapFn(+this.valueControl.value);
   }
 
 }

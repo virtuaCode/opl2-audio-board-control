@@ -12,70 +12,158 @@ export class AppComponent implements OnInit, OnDestroy {
 
   Operators = Operators;
 
-  devicesControl = new FormControl();
+  outputControl = new FormControl();
+  inputControl = new FormControl();
+  instrumentControl = new FormControl({ value: 0, disabled: true });
 
-  devices: {[key: string]: WebMidi.MIDIOutput} = {};
-  devicesSub?: Subscription;
-  controlSub?: Subscription;
+  outputs: { [key: string]: WebMidi.MIDIOutput } = {};
+  inputs: { [key: string]: WebMidi.MIDIInput } = {};
+  outputsSub?: Subscription;
+  inputsSub?: Subscription;
+  selectOutputSub?: Subscription;
+  selectInputSub?: Subscription;
+  midiEventSub?: Subscription;
+  instrumentSub?: Subscription;
+  availableSub?: Subscription;
 
-  constructor(private readonly sysex: SysexService) {}
+  errors: any[] = [];
+  instruments: number[] = Array.from(new Array(16), (e, i) => i);
+  instrument: Instrument = this.sysex.getDefaultInstrument();
+
+  constructor(private readonly sysex: SysexService) { }
 
   ngOnInit(): void {
-    this.sysex.initMIDI();
+    this.sysex.initMIDI().catch(this.errorHandler.bind(this));
 
-    this.devicesSub = this.sysex.getOutputDevices().subscribe(map => {
-      this.devices = this.mapToObject(map);
+    this.outputsSub = this.sysex.getOutputs().subscribe(map => {
+      this.outputs = this.mapToObject<WebMidi.MIDIOutput>(map);
     });
 
-    this.controlSub = this.devicesControl.valueChanges.subscribe(key => {
-      this.sysex.setOutputDevice(this.devices[key]);
+    this.inputsSub = this.sysex.getInputs().subscribe(map => {
+      this.inputs = this.mapToObject<WebMidi.MIDIInput>(map);
+    });
+
+    this.selectOutputSub = this.outputControl.valueChanges.subscribe(key => {
+      this.sysex.setOutput(this.outputs[key]);
+    });
+
+    this.selectInputSub = this.inputControl.valueChanges.subscribe(key => {
+      this.sysex.setInput(this.inputs[key]);
+    });
+
+    this.availableSub = this.deviceAvailable.subscribe((available) => {
+      if (available) {
+        this.instrumentControl.enable();
+      } else {
+        this.instrumentControl.disable({emitEvent: false});
+      }
+    });
+
+    this.instrumentSub = this.instrumentControl.valueChanges.subscribe(value => {
+      this.sysex.setInstrument(value);
+    });
+
+    this.midiEventSub = this.sysex.getResponseMessages().subscribe(instrument => {
+      this.instrument = instrument;
     });
   }
 
   ngOnDestroy() {
-    if (this.devicesSub) {
-      this.devicesSub.unsubscribe();
+    if (this.outputsSub) {
+      this.outputsSub.unsubscribe();
     }
 
-    if (this.controlSub) {
-      this.controlSub.unsubscribe();
+    if (this.inputsSub) {
+      this.inputsSub.unsubscribe();
+    }
+
+    if (this.midiEventSub) {
+      this.midiEventSub.unsubscribe();
+    }
+
+    if (this.selectInputSub) {
+      this.selectInputSub.unsubscribe();
+    }
+
+    if (this.selectOutputSub) {
+      this.selectOutputSub.unsubscribe();
     }
   }
 
   get deviceAvailable() {
-    return this.sysex.getDeviceAvailable();
+    return this.sysex.getInputOutputAvailable();
   }
 
   onAttackRateChange(value: number, op: Operators) {
-    this.sysex.sendAttackRate(value, op);
+    this.sysex.sendAttackRate(value, op).catch(this.errorHandler.bind(this));
   }
 
   onDecayRateChange(value: number, op: Operators) {
-    this.sysex.sendDecayRate(value, op);
+    this.sysex.sendDecayRate(value, op).catch(this.errorHandler.bind(this));
   }
 
   onSustainLevelChange(value: number, op: Operators) {
-    this.sysex.sendSustainLevel(value, op);
+    this.sysex.sendSustainLevel(value, op).catch(this.errorHandler.bind(this));
   }
 
   onReleaseRateChange(value: number, op: Operators) {
-    this.sysex.sendReleaseRate(value, op);
+    this.sysex.sendReleaseRate(value, op).catch(this.errorHandler.bind(this));
   }
 
-  onSustainingChange(value: number, op: Operators) {
-    this.sysex.sendSustaining(value, op);
+  onSustainingChange(value: boolean, op: Operators) {
+    this.sysex.sendSustaining(value, op).catch(this.errorHandler.bind(this));
   }
 
-  onEnvelopeScalingChange(value: number, op: Operators) {
-    this.sysex.sendEnvelopeScaling(value, op);
+  onFrequenceMultiplierChange(value: number, op: Operators) {
+    this.sysex.sendFrequencyMultiplier(value, op).catch(this.errorHandler.bind(this));
+  }
+
+  onModulationFeedbackChange(value: number) {
+    this.sysex.sendFeedbackLevel(value).catch(this.errorHandler.bind(this));
+  }
+
+  onKeyScaleLevelChange(value: number, op: Operators) {
+    this.sysex.sendKeyScaleLevel(value, op).catch(this.errorHandler.bind(this));
+  }
+
+  onSynthModeChange(value: boolean) {
+    this.sysex.sendSynthType(value).catch(this.errorHandler.bind(this));
+  }
+
+  onWaveformChange(value: number, op: Operators) {
+    this.sysex.sendWaveform(value, op).catch(this.errorHandler.bind(this));
+  }
+
+  onEnvelopeScalingChange(value: boolean, op: Operators) {
+    this.sysex.sendEnvelopeScaling(value, op).catch(this.errorHandler.bind(this));
+  }
+
+  onVibratoChange(value: boolean, op: Operators) {
+    this.sysex.sendVibrato(value, op).catch(this.errorHandler.bind(this));
+  }
+
+  onTremoloChange(value: boolean, op: Operators) {
+    this.sysex.sendTremolo(value, op).catch(this.errorHandler.bind(this));
   }
 
   onOutputLevelChange(value: number, op: Operators) {
-    this.sysex.sendOutputLevel(value, op);
+    this.sysex.sendOutputLevel(value, op).catch(this.errorHandler.bind(this));
   }
 
-  private mapToObject(map: WebMidi.MIDIOutputMap): {[key: string]: WebMidi.MIDIOutput} {
+  removeError(error: any) {
+    this.errors = this.errors.filter(e => e !== error);
+  }
+
+  mapFrequenceMultiplier(val: number) {
+    return val === 0 ? 0.5 : val;
+  }
+
+  private errorHandler(error: any) {
+    this.errors = [error, ...this.errors];
+  }
+
+  private mapToObject<T>(map: Map<string, T>): { [key: string]: T } {
     return Array.from(map.entries())
-        .reduce((main, [key, value]) => ({...main, [key]: value}), {} );
+      .reduce((main, [key, value]) => ({ ...main, [key]: value }), {});
   }
 }
