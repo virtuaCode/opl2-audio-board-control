@@ -5,6 +5,7 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "build:prod": "ng build --prod --deploy-url \"https://virtuacode.github.io/opl2-audio-board-control/\" --base-href \"https://virtuacode.github.io/opl2-audio-board-control/\"",
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e"
