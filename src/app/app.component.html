@@ -145,7 +145,7 @@
           <div class="column is-4">
           </div>
           <div class="column is-4 is-offset-1">
-            <app-checkbox [default]="false" [invert]="true" [inputValue]="instrument.frequenceModulation" [enabled]="deviceAvailable | async"
+            <app-checkbox [default]="false" [inputValue]="instrument.frequenceModulation" [enabled]="deviceAvailable | async"
               (value)="onSynthModeChange($event)">
             </app-checkbox>
           </div>

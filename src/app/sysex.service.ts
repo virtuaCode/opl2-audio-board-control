@@ -127,6 +127,9 @@ export class SysexService {
           // Message is Response
 
           const data = this.decode(message.slice(6, message.length - 1));
+
+          console.log('Received Response Message: ' + data.map(e => sprintf('%02X', e)).join(' '));
+
           return of(this.dataToInstrument(data));
         }
       }
@@ -320,15 +323,15 @@ export class SysexService {
   }
 
   /**
-   * Sends the synth type
-   * @param type Value between 0 (FM) and 1 (AM)
+   * Sends synth mode (Frequency Modulation or Additive synthesis)
+   * @param type true (FM) and false (AS)
    */
   async sendSynthType(type: boolean) {
     if (!this.output) {
       throw new Error('MIDIOutput not set');
     }
 
-    this.sendParameterMessage(this.output, 5, 0xFE, +type);
+    this.sendParameterMessage(this.output, 5, 0xFE, +(!type));
   }
 
   /**
