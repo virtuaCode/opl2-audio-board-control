@@ -20,7 +20,10 @@ export class SliderComponent implements OnInit, OnDestroy {
   default = 0;
 
   @Input()
-  mapFn = (val: number) => val;
+  path = '';
+
+  @Input()
+  mapFn = (val: number) => val
 
   @Input()
   set enabled(value: boolean) {
@@ -34,8 +37,11 @@ export class SliderComponent implements OnInit, OnDestroy {
   }
 
   @Input()
-  set inputValue(value: number) {
-    this.valueControl.setValue(value, { emitEvent: false });
+  set instrument(instr: Instrument) {
+    if (this.path) {
+      const value = this.path.split('.').reduce((val: any, key) => val[key], instr);
+      this.valueControl.setValue(value, { emitEvent: false });
+    }
   }
 
   @Output()
@@ -50,13 +56,13 @@ export class SliderComponent implements OnInit, OnDestroy {
   }
 
   _enabled = false;
+
   constructor() { }
 
   ngOnInit() {
     this.valueControl.setValue(this.default);
     this.valueChangeSub = this.valueControl.valueChanges.pipe(
       debounceTime(200),
-      distinctUntilChanged()
     ).subscribe(value => this.value.emit(value));
   }
 

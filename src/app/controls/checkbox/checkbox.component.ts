@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, Output, EventEmitter, OnDestroy } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter, OnDestroy, ChangeDetectorRef, SimpleChanges, OnChanges } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
@@ -34,9 +34,15 @@ export class CheckboxComponent implements OnInit, OnDestroy {
   _enabled = false;
 
   @Input()
-  set inputValue(value: boolean) {
-    this.valueControl.setValue(value, { emitEvent: false });
+  set instrument(instr: Instrument) {
+    if (this.path) {
+      const value = this.path.split('.').reduce((val: any, key) => val[key], instr);
+      this.valueControl.setValue(value, { emitEvent: false});
+    }
   }
+
+  @Input()
+  path = '';
 
   @Output()
   value = new EventEmitter<boolean>();
@@ -51,7 +57,6 @@ export class CheckboxComponent implements OnInit, OnDestroy {
     this.valueControl.setValue(this.default);
     this.valueChangeSub = this.valueControl.valueChanges.pipe(
       debounceTime(200),
-      distinctUntilChanged()
     ).subscribe(value => this.value.emit(this.invert ? !value : value));
   }
 

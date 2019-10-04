@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
-import { Observable, Subject, BehaviorSubject, combineLatest, fromEvent, of, empty } from 'rxjs';
-import { map, zip, switchMap, flatMap } from 'rxjs/operators';
-import { sprintf } from 'sprintf-js';
+import { Observable, Subject, BehaviorSubject, combineLatest, fromEvent, of, empty, merge } from 'rxjs';
+import { map, switchMap, filter } from 'rxjs/operators';
 import { EventTargetLike } from 'rxjs/internal/observable/fromEvent';
+import { Message } from './models/message';
 
 
 export const SOX = [0xF0, 0x7D];
@@ -25,6 +25,7 @@ export class SysexService {
 
   private access: Subject<WebMidi.MIDIAccess> = new Subject();
   private output?: WebMidi.MIDIOutput;
+  private outputMessages = new Subject<Message>();
   private input: Subject<WebMidi.MIDIInput> = new Subject();
   private instrument = 0;
   private outputAvailable = new BehaviorSubject(false);
@@ -108,29 +109,38 @@ export class SysexService {
    * Observable of incoming MIDI messages
    */
   getMIDIMessages() {
-    return this.input.pipe(switchMap(input => fromEvent(input as EventTargetLike<WebMidi.MIDIMessageEvent>, 'midimessage')));
+    const inputMessages = this.input.pipe(
+      switchMap(input => fromEvent(input as EventTargetLike<WebMidi.MIDIMessageEvent>, 'midimessage')),
+      map<WebMidi.MIDIMessageEvent, Message>(event => {
+        return {
+          data: event.data,
+          from: event.currentTarget as WebMidi.MIDIPort,
+          time: new Date(event.timeStamp)
+        };
+      }));
+
+    return merge(inputMessages, this.outputMessages);
+  }
+
+  getSysExMessages() {
+    return this.getMIDIMessages().pipe(filter(message => message.data[0] === SOX[0]));
   }
 
   /**
    * Observable of incoming MIDI response messages
    */
   getResponseMessages() {
-    return this.getMIDIMessages().pipe(flatMap((event) => {
-      const message = event.data;
-
-      if (message[0] === SOX[0] && message[1] === SOX[1] && message[message.length - 1] === EOX[0]) {
+    return this.getMIDIMessages().pipe(switchMap(({ data, from }) => {
+      if (data[0] === SOX[0] && data[1] === SOX[1] && data[data.length - 1] === EOX[0]) {
         // MIDI Message is a SysEx Message
 
-        const [command, param1, param2, instr] = message.slice(2, 6);
+        const [command, param1, param2, instr] = data.slice(2, 6);
 
         if (command === SYSEX_RESPONSE) {
           // Message is Response
 
-          const data = this.decode(message.slice(6, message.length - 1));
-
-          console.log('Received Response Message: ' + data.map(e => sprintf('%02X', e)).join(' '));
-
-          return of(this.dataToInstrument(data));
+          const decoded = this.decode(data.slice(6, data.length - 1));
+          return of(this.dataToInstrument(decoded));
         }
       }
 
@@ -319,7 +329,7 @@ export class SysexService {
       throw new Error('MIDIOutput not set');
     }
 
-    this.sendParameterMessage(this.output, 5, 0xF1, factor << 1);
+    this.sendParameterMessage(this.output, 6, 0xF1, factor << 1);
   }
 
   /**
@@ -331,7 +341,7 @@ export class SysexService {
       throw new Error('MIDIOutput not set');
     }
 
-    this.sendParameterMessage(this.output, 5, 0xFE, +(!type));
+    this.sendParameterMessage(this.output, 6, 0xFE, +(!type));
   }
 
   /**
@@ -354,7 +364,7 @@ export class SysexService {
       throw new Error('MIDIOutput not set');
     }
 
-    const offset = operator === Operators.Modulator ? 6 : 11;
+    const offset = operator === Operators.Modulator ? 5 : 11;
 
     this.sendParameterMessage(this.output, offset, 0xF8, waveform);
   }
@@ -411,7 +421,7 @@ export class SysexService {
     const header = [SYSEX_PARAMETER, 0x00, 0x00, this.instrument];
     const data = this.encode([offset, mask, value]);
     const sysexMessage = [...SOX, ...header, ...data, ...EOX];
-    console.log('Sending Parameter Message: ' + sysexMessage.map(e => sprintf('%02X', e)).join(' '));
+    this.outputMessages.next({ from: output, data: new Uint8Array(sysexMessage), time: new Date() });
     output.send(sysexMessage);
   }
 
@@ -424,7 +434,7 @@ export class SysexService {
   sendRequestMessage(output: WebMidi.MIDIOutput) {
     const header = [SYSEX_REQUEST, 0x00, 0x00, this.instrument];
     const sysexMessage = [...SOX, ...header, ...EOX];
-    console.log('Sending Request Message: ' + sysexMessage.map(e => sprintf('%02X', e)).join(' '));
+    this.outputMessages.next({ from: output, data: new Uint8Array(sysexMessage), time: new Date() });
     output.send(sysexMessage);
   }
 
@@ -432,7 +442,7 @@ export class SysexService {
     return {
       drumChannel: 0,
       feedback: 0,
-      frequenceModulation: false,
+      frequencyModulation: false,
       modulator: {
         tremolo: false,
         vibrato: false,
@@ -467,8 +477,8 @@ export class SysexService {
   dataToInstrument(data: number[]): Instrument {
     return {
       drumChannel: data[0],
-      feedback: (data[5] & 0x0E) >> 1,
-      frequenceModulation: !(data[5] & 0x01),
+      feedback: (data[6] & 0x0E) >> 1,
+      frequencyModulation: !(data[6] & 0x01),
       modulator: {
         tremolo: !!((data[1] & 0x80) >> 7),
         vibrato: !!((data[1] & 0x40) >> 6),
@@ -481,7 +491,7 @@ export class SysexService {
         decay: data[3] & 0x0F,
         sustain: 0xF - ((data[4] & 0xF0) >> 4),
         release: data[4] & 0x0F,
-        waveform: data[6] & 0x03,
+        waveform: data[5] & 0x03,
       },
       carrier: {
         tremolo: !!((data[7] & 0x80) >> 7),

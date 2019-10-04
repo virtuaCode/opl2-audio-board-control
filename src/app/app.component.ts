@@ -1,7 +1,8 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ElementRef, ViewChild } from '@angular/core';
 import { Operators, SysexService } from './sysex.service';
 import { FormControl } from '@angular/forms';
 import { Subscription } from 'rxjs';
+import { sprintf } from 'sprintf-js';
 
 @Component({
   selector: 'app-root',
@@ -9,6 +10,9 @@ import { Subscription } from 'rxjs';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit, OnDestroy {
+
+  @ViewChild('textArea', {static: false})
+  textArea?: ElementRef<HTMLTextAreaElement>;
 
   Operators = Operators;
 
@@ -25,12 +29,14 @@ export class AppComponent implements OnInit, OnDestroy {
   midiEventSub?: Subscription;
   instrumentSub?: Subscription;
   availableSub?: Subscription;
+  midiMessageSub?: Subscription;
 
   errors: any[] = [];
   instruments: number[] = Array.from(new Array(16), (e, i) => i);
   instrument: Instrument = this.sysex.getDefaultInstrument();
+  midiLogValue = '';
 
-  constructor(private readonly sysex: SysexService) { }
+  constructor(private readonly sysex: SysexService, private readonly ref: ChangeDetectorRef) { }
 
   ngOnInit(): void {
     this.sysex.initMIDI().catch(this.errorHandler.bind(this));
@@ -66,6 +72,22 @@ export class AppComponent implements OnInit, OnDestroy {
     this.midiEventSub = this.sysex.getResponseMessages().subscribe(instrument => {
       this.instrument = instrument;
     });
+
+    this.midiMessageSub = this.sysex.getSysExMessages().subscribe(({from, time, data}) => {
+        const h = time.getHours();
+        const m = time.getMinutes();
+        const s = time.getSeconds();
+        const ms = time.getMilliseconds();
+
+        this.midiLogValue += sprintf('%02d:%02d:%02d.%03d ', h, m, s, ms);
+        this.midiLogValue += `[${from.type === 'input' ? 'Input' : 'Output'}]\t`;
+        this.midiLogValue += Array.from(data).map(i => sprintf('%02X', i)).join(' ');
+        this.midiLogValue += '\n';
+
+        if (this.textArea) {
+          this.textArea.nativeElement.scrollTop = this.textArea.nativeElement.scrollHeight;
+        }
+    });
   }
 
   ngOnDestroy() {
@@ -87,6 +109,10 @@ export class AppComponent implements OnInit, OnDestroy {
 
     if (this.selectOutputSub) {
       this.selectOutputSub.unsubscribe();
+    }
+
+    if (this.midiMessageSub) {
+      this.midiMessageSub.unsubscribe();
     }
   }
 
@@ -156,6 +182,21 @@ export class AppComponent implements OnInit, OnDestroy {
 
   mapFrequenceMultiplier(val: number) {
     return val === 0 ? 0.5 : val;
+  }
+
+  mapFeedback(val: number) {
+    const feedback = [
+      '0',
+      '1/16',
+      '1/8',
+      '1/4',
+      '1/2',
+      '1',
+      '2',
+      '4'
+    ];
+
+    return feedback[val];
   }
 
   private errorHandler(error: any) {
