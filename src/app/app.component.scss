@@ -12,7 +12,7 @@ section.parameters {
   border: 2px solid black;
 }
 
-section.configuration {
+section.configuration, .midi-log {
   margin-bottom: 5rem;
   border: 2px solid black;
 
@@ -45,14 +45,19 @@ section.configuration {
   }
 }
 
+section.log {
+  display: flex;
+}
+
 .midi-log {
-  min-height: 200px;
+  //min-height: 200px;
+  flex-grow: 1;
   border: 2px solid black;
-  margin-top: 15px;
   font-weight: bold;
-  font-size: 16px;
+  font-size: 12px;
   width: 100%;
   resize: none;
+  overflow-y: scroll;
   font-family: monospace;
   padding: 4px;
 }

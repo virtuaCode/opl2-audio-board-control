@@ -31,11 +31,11 @@
             <div class="label">Attack Rate</div>
           </div>
           <div class="column is-4">
-            <app-slider min="0" max="15" default="0" [instrument]="instrument" path="carrier.attack" 
+            <app-slider min="0" max="15" default="0" [instrument]="instrument" path="carrier.attack"
               [enabled]="deviceAvailable | async" (value)="onAttackRateChange($event, Operators.Carrier)"></app-slider>
           </div>
           <div class="column is-4 is-offset-1">
-            <app-slider min="0" max="15" default="0" [instrument]="instrument" path="modulator.attack" 
+            <app-slider min="0" max="15" default="0" [instrument]="instrument" path="modulator.attack"
               [enabled]="deviceAvailable | async" (value)="onAttackRateChange($event, Operators.Modulator)">
             </app-slider>
           </div>
@@ -46,11 +46,11 @@
             <div class="label">Decay Rate</div>
           </div>
           <div class="column is-4">
-            <app-slider min="0" max="15" default="0" [instrument]="instrument" path="carrier.decay" 
+            <app-slider min="0" max="15" default="0" [instrument]="instrument" path="carrier.decay"
               [enabled]="deviceAvailable | async" (value)="onDecayRateChange($event, Operators.Carrier)"></app-slider>
           </div>
           <div class="column is-4 is-offset-1">
-            <app-slider min="0" max="15" default="0" [instrument]="instrument" path="modulator.decay" 
+            <app-slider min="0" max="15" default="0" [instrument]="instrument" path="modulator.decay"
               [enabled]="deviceAvailable | async" (value)="onDecayRateChange($event, Operators.Modulator)"></app-slider>
           </div>
         </div>
@@ -60,12 +60,12 @@
             <div class="label">Sustain Level</div>
           </div>
           <div class="column is-4">
-            <app-slider min="0" max="15" default="0" [instrument]="instrument" path="carrier.sustain" 
+            <app-slider min="0" max="15" default="0" [instrument]="instrument" path="carrier.sustain"
               [enabled]="deviceAvailable | async" (value)="onSustainLevelChange($event, Operators.Carrier)">
             </app-slider>
           </div>
           <div class="column is-4 is-offset-1">
-            <app-slider min="0" max="15" default="0" [instrument]="instrument" path="modulator.sustain" 
+            <app-slider min="0" max="15" default="0" [instrument]="instrument" path="modulator.sustain"
               [enabled]="deviceAvailable | async" (value)="onSustainLevelChange($event, Operators.Modulator)">
             </app-slider>
           </div>
@@ -76,11 +76,11 @@
             <div class="label">Release Rate</div>
           </div>
           <div class="column is-4">
-            <app-slider min="0" max="15" default="0" [instrument]="instrument" path="carrier.release" 
+            <app-slider min="0" max="15" default="0" [instrument]="instrument" path="carrier.release"
               [enabled]="deviceAvailable | async" (value)="onReleaseRateChange($event, Operators.Carrier)"></app-slider>
           </div>
           <div class="column is-4 is-offset-1">
-            <app-slider min="0" max="15" default="0" [instrument]="instrument" path="modulator.release" 
+            <app-slider min="0" max="15" default="0" [instrument]="instrument" path="modulator.release"
               [enabled]="deviceAvailable | async" (value)="onReleaseRateChange($event, Operators.Modulator)">
             </app-slider>
           </div>
@@ -123,14 +123,14 @@
             <div class="label">Frequency Multiplier</div>
           </div>
           <div class="column is-4">
-            <app-slider [instrument]="instrument" path="carrier.frequencyMultiplier"  [mapFn]="mapFrequenceMultiplier" min="0"
-              max="15" default="0" [enabled]="deviceAvailable | async"
+            <app-slider [instrument]="instrument" path="carrier.frequencyMultiplier" [mapFn]="mapFrequenceMultiplier"
+              min="0" max="15" default="0" [enabled]="deviceAvailable | async"
               (value)="onFrequenceMultiplierChange($event, Operators.Carrier)">
             </app-slider>
           </div>
           <div class="column is-4 is-offset-1">
-            <app-slider [instrument]="instrument" path="modulator.frequencyMultiplier"  [mapFn]="mapFrequenceMultiplier" min="0"
-              max="15" default="0" [enabled]="deviceAvailable | async"
+            <app-slider [instrument]="instrument" path="modulator.frequencyMultiplier" [mapFn]="mapFrequenceMultiplier"
+              min="0" max="15" default="0" [enabled]="deviceAvailable | async"
               (value)="onFrequenceMultiplierChange($event, Operators.Modulator)">
             </app-slider>
           </div>
@@ -143,7 +143,7 @@
           <div class="column is-4">
           </div>
           <div class="column is-4 is-offset-1">
-            <app-slider min="0" max="7" default="0" [mapFn]="mapFeedback" [instrument]="instrument" path="feedback" 
+            <app-slider min="0" max="7" default="0" [mapFn]="mapFeedback" [instrument]="instrument" path="feedback"
               [enabled]="deviceAvailable | async" (value)="onModulationFeedbackChange($event)"></app-slider>
           </div>
         </div>
@@ -167,11 +167,11 @@
             <div class="label">Output Level</div>
           </div>
           <div class="column is-4">
-            <app-slider min="0" max="63" default="0" [instrument]="instrument" path="carrier.outputLevel" 
+            <app-slider min="0" max="63" default="0" [instrument]="instrument" path="carrier.outputLevel"
               [enabled]="deviceAvailable | async" (value)="onOutputLevelChange($event, Operators.Carrier)"></app-slider>
           </div>
           <div class="column is-4 is-offset-1">
-            <app-slider min="0" max="63" default="0" [instrument]="instrument" path="modulator.outputLevel" 
+            <app-slider min="0" max="63" default="0" [instrument]="instrument" path="modulator.outputLevel"
               [enabled]="deviceAvailable | async" (value)="onOutputLevelChange($event, Operators.Modulator)">
             </app-slider>
           </div>
@@ -182,12 +182,12 @@
             <div class="label">Key Scale Level</div>
           </div>
           <div class="column is-4">
-            <app-slider min="0" max="3" default="0" [instrument]="instrument" path="carrier.keyScale" 
+            <app-slider min="0" max="3" default="0" [instrument]="instrument" path="carrier.keyScale"
               [enabled]="deviceAvailable | async" (value)="onKeyScaleLevelChange($event, Operators.Carrier)">
             </app-slider>
           </div>
           <div class="column is-4 is-offset-1">
-            <app-slider min="0" max="3" default="0" [instrument]="instrument" path="modulator.keyScale" 
+            <app-slider min="0" max="3" default="0" [instrument]="instrument" path="modulator.keyScale"
               [enabled]="deviceAvailable | async" (value)="onKeyScaleLevelChange($event, Operators.Modulator)">
             </app-slider>
           </div>
@@ -226,11 +226,11 @@
             <div class="label">Waveform</div>
           </div>
           <div class="column is-4">
-            <app-slider min="0" max="3" default="0" [instrument]="instrument" path="carrier.waveform" 
+            <app-slider min="0" max="3" default="0" [instrument]="instrument" path="carrier.waveform"
               [enabled]="deviceAvailable | async" (value)="onWaveformChange($event, Operators.Carrier)"></app-slider>
           </div>
           <div class="column is-4 is-offset-1">
-            <app-slider min="0" max="3" default="0" [instrument]="instrument" path="modulator.waveform" 
+            <app-slider min="0" max="3" default="0" [instrument]="instrument" path="modulator.waveform"
               [enabled]="deviceAvailable | async" (value)="onWaveformChange($event, Operators.Modulator)"></app-slider>
           </div>
         </div>
@@ -267,30 +267,39 @@
               </select>
             </div>
           </div>
+          <div class="columns">
+            <div class="column">
+              <div class="label">Instrument</div>
+            </div>
+            <div class="column">
+              <select [formControl]="instrumentControl">
+                <option *ngFor="let instr of instruments" [value]="instr">
+                  Instrument {{instr + 1}}
+                </option>
+              </select>
+            </div>
+          </div>
+          <div class="columns">
+            <div class="column">
+            </div>
+            <div class="column">
+              <input [disabled]="! (deviceAvailable | async)" type="file" (change)="onSendBank($event.target.files)"
+                placeholder="Upload Bank">
+              <!--<button (click)="onSendBank()">Upload Bank</button>-->
+            </div>
+          </div>
         </div>
 
-        <div>
-          <textarea #textArea [value]="midiLogValue" readonly="readonly" class="midi-log">
+
+
+
+      </section>
+
+
+      <!-- <section class="column log configuration">
+      </section>-->
+      <textarea #textArea [value]="midiLogValue" readonly="readonly" class="column log configuration midi-log">
           </textarea>
-        </div>
-
-      </section>
-
-
-      <section class="column configuration">
-        <div class="columns">
-          <div class="column">
-            <div class="label">Instrument</div>
-          </div>
-          <div class="column">
-            <select [formControl]="instrumentControl">
-              <option *ngFor="let instr of instruments" [value]="instr">
-                Instrument {{instr + 1}}
-              </option>
-            </select>
-          </div>
-        </div>
-      </section>
 
     </div>
   </div>

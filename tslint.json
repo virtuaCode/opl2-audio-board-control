@@ -15,6 +15,9 @@
       "app",
       "camelCase"
     ],
+    "no-bitwise": [
+      false
+    ],
     "component-selector": [
       true,
       "element",

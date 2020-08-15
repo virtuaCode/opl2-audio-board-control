@@ -3,6 +3,8 @@ import { Operators, SysexService } from './sysex.service';
 import { FormControl } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { sprintf } from 'sprintf-js';
+import * as WebMidi from 'webmidi';
+
 
 @Component({
   selector: 'app-root',
@@ -11,7 +13,7 @@ import { sprintf } from 'sprintf-js';
 })
 export class AppComponent implements OnInit, OnDestroy {
 
-  @ViewChild('textArea', {static: false})
+  @ViewChild('textArea', { static: false })
   textArea?: ElementRef<HTMLTextAreaElement>;
 
   Operators = Operators;
@@ -20,8 +22,8 @@ export class AppComponent implements OnInit, OnDestroy {
   inputControl = new FormControl();
   instrumentControl = new FormControl({ value: 0, disabled: true });
 
-  outputs: { [key: string]: WebMidi.MIDIOutput } = {};
-  inputs: { [key: string]: WebMidi.MIDIInput } = {};
+  outputs: { [key: string]: WebMidi.Output } = {};
+  inputs: { [key: string]: WebMidi.Input } = {};
   outputsSub?: Subscription;
   inputsSub?: Subscription;
   selectOutputSub?: Subscription;
@@ -42,11 +44,13 @@ export class AppComponent implements OnInit, OnDestroy {
     this.sysex.initMIDI().catch(this.errorHandler.bind(this));
 
     this.outputsSub = this.sysex.getOutputs().subscribe(map => {
-      this.outputs = this.mapToObject<WebMidi.MIDIOutput>(map);
+      this.outputs = this.mapToObject<WebMidi.Output>(map);
+      console.log(this.outputs);
     });
 
     this.inputsSub = this.sysex.getInputs().subscribe(map => {
-      this.inputs = this.mapToObject<WebMidi.MIDIInput>(map);
+      this.inputs = this.mapToObject<WebMidi.Input>(map);
+      console.log(this.inputs);
     });
 
     this.selectOutputSub = this.outputControl.valueChanges.subscribe(key => {
@@ -61,7 +65,7 @@ export class AppComponent implements OnInit, OnDestroy {
       if (available) {
         this.instrumentControl.enable();
       } else {
-        this.instrumentControl.disable({emitEvent: false});
+        this.instrumentControl.disable({ emitEvent: false });
       }
     });
 
@@ -73,20 +77,21 @@ export class AppComponent implements OnInit, OnDestroy {
       this.instrument = instrument;
     });
 
-    this.midiMessageSub = this.sysex.getSysExMessages().subscribe(({from, time, data}) => {
-        const h = time.getHours();
-        const m = time.getMinutes();
-        const s = time.getSeconds();
-        const ms = time.getMilliseconds();
+    this.midiMessageSub = this.sysex.getSysExMessages().subscribe(({ from, time, data }) => {
+      const h = time.getHours();
+      const m = time.getMinutes();
+      const s = time.getSeconds();
+      const ms = time.getMilliseconds();
 
-        this.midiLogValue += sprintf('%02d:%02d:%02d.%03d ', h, m, s, ms);
-        this.midiLogValue += `[${from.type === 'input' ? 'Input' : 'Output'}]\t`;
-        this.midiLogValue += Array.from(data).map(i => sprintf('%02X', i)).join(' ');
-        this.midiLogValue += '\n';
+      this.midiLogValue += sprintf('%02d:%02d:%02d.%03d ', h, m, s, ms);
+      this.midiLogValue += `[${from.type === 'input' ? 'Input' : 'Output'}]\t`;
+      this.midiLogValue += Array.from(data).map(i => sprintf('%02X', i)).join(' ');
+      this.midiLogValue += '\n';
 
-        if (this.textArea) {
-          this.textArea.nativeElement.scrollTop = this.textArea.nativeElement.scrollHeight;
-        }
+      if (this.textArea) {
+        this.textArea.nativeElement.scrollTop = this.textArea.nativeElement.scrollHeight;
+      }
+      this.ref.detectChanges();
     });
   }
 
@@ -118,6 +123,11 @@ export class AppComponent implements OnInit, OnDestroy {
 
   get deviceAvailable() {
     return this.sysex.getInputOutputAvailable();
+  }
+
+  async onSendBank(files: File[]) {
+    const file = files[0];
+    this.sysex.sendBank(await file.text());
   }
 
   onAttackRateChange(value: number, op: Operators) {

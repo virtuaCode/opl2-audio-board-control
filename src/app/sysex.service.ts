@@ -1,12 +1,12 @@
 import { Injectable } from '@angular/core';
-import { Observable, Subject, BehaviorSubject, combineLatest, fromEvent, of, empty, merge } from 'rxjs';
+import { Observable, Subject, BehaviorSubject, combineLatest, fromEventPattern, of, empty, merge, EMPTY } from 'rxjs';
 import { map, switchMap, filter } from 'rxjs/operators';
-import { EventTargetLike } from 'rxjs/internal/observable/fromEvent';
 import { Message } from './models/message';
+import * as WebMidi from 'webmidi';
 
-
-export const SOX = [0xF0, 0x7D];
-export const EOX = [0xF7];
+export const SOX = 0xF0;
+export const VENDOR = 0x7D;
+export const EOX = 0xF7;
 
 export const SYSEX_INSTRUMENT = 0x00;
 export const SYSEX_PARAMETER = 0x01;
@@ -23,10 +23,10 @@ export enum Operators {
 })
 export class SysexService {
 
-  private access: Subject<WebMidi.MIDIAccess> = new Subject();
-  private output?: WebMidi.MIDIOutput;
+  private access: Subject<WebMidi.WebMidi> = new Subject();
+  private output?: WebMidi.Output;
   private outputMessages = new Subject<Message>();
-  private input: Subject<WebMidi.MIDIInput> = new Subject();
+  private input: Subject<WebMidi.Input> = new Subject();
   private instrument = 0;
   private outputAvailable = new BehaviorSubject(false);
   private inputAvailable = new BehaviorSubject(false);
@@ -38,11 +38,17 @@ export class SysexService {
    * Requests the MIDIAccess from the browser
    */
   initMIDI(): Promise<void> {
-    if (!navigator.requestMIDIAccess) {
+    if (!WebMidi.default.supported) {
       return Promise.reject(new Error('Your browser does not support the Web MIDI API. Try open the website in Google Chrome.'));
     }
 
-    return navigator.requestMIDIAccess({ sysex: true }).then(access => this.access.next(access));
+    return new Promise((resolve, reject) => WebMidi.default.enable((err) => {
+      if (err) {
+        reject(err);
+      }
+
+      resolve(this.access.next(WebMidi.default));
+    }, true));
   }
 
   /**
@@ -63,28 +69,44 @@ export class SysexService {
    * Returns a observable which returns true when both the MIDIOutput and MIDIInput are available
    */
   getInputOutputAvailable() {
-    return combineLatest(this.getOutputAvailable(), this.getInputAvailable(), (o1, o2) => o1 && o2);
+    return combineLatest(this.getOutputAvailable(), this.getInputAvailable()).pipe(map(arr => arr.every(a => a)));
   }
 
   /**
    * Returns a Map of the available MIDIOutputs
    */
-  getOutputs(): Observable<Map<string, WebMidi.MIDIOutput>> {
-    return this.access.pipe(map(e => e.outputs));
+  getOutputs(): Observable<Map<string, WebMidi.Output>> {
+    return this.access.pipe(map(e => {
+      const outputs = new Map<string, WebMidi.Output>();
+
+      for (const o of e.outputs) {
+        outputs.set(o.name, o);
+      }
+
+      return outputs;
+    }));
   }
 
   /**
    * Returns a Map of the available MIDIInputs
    */
-  getInputs(): Observable<Map<string, WebMidi.MIDIInput>> {
-    return this.access.pipe(map(e => e.inputs));
+  getInputs(): Observable<Map<string, WebMidi.Input>> {
+    return this.access.pipe(map(e => {
+      const outputs = new Map<string, WebMidi.Input>();
+
+      for (const i of e.inputs) {
+        outputs.set(i.name, i);
+      }
+
+      return outputs;
+    }));
   }
 
   /**
    * Sets the active MIDIOutput
    * @param output MIDIOutput
    */
-  setOutput(output: WebMidi.MIDIOutput) {
+  setOutput(output: WebMidi.Output) {
     this.output = output;
     this.outputAvailable.next(true);
   }
@@ -93,7 +115,7 @@ export class SysexService {
    * Sets the active MIDIInput
    * @param input MIDIInput
    */
-  setInput(input: WebMidi.MIDIInput) {
+  setInput(input: WebMidi.Input) {
     this.input.next(input);
     this.inputAvailable.next(true);
   }
@@ -110,12 +132,14 @@ export class SysexService {
    */
   getMIDIMessages() {
     const inputMessages = this.input.pipe(
-      switchMap(input => fromEvent(input as EventTargetLike<WebMidi.MIDIMessageEvent>, 'midimessage')),
-      map<WebMidi.MIDIMessageEvent, Message>(event => {
+      switchMap(input => fromEventPattern<WebMidi.InputEventMidimessage>(
+        (handler) => input.addListener('midimessage', 'all', handler),
+        (handler) => input.removeListener('midimessage', 'all', handler))),
+      map<WebMidi.InputEventMidimessage, Message>(event => {
         return {
           data: event.data,
-          from: event.currentTarget as WebMidi.MIDIPort,
-          time: new Date(event.timeStamp)
+          from: event.target,
+          time: new Date(event.timestamp)
         };
       }));
 
@@ -123,7 +147,7 @@ export class SysexService {
   }
 
   getSysExMessages() {
-    return this.getMIDIMessages().pipe(filter(message => message.data[0] === SOX[0]));
+    return this.getMIDIMessages().pipe(filter(message => message.data[0] === SOX));
   }
 
   /**
@@ -131,25 +155,25 @@ export class SysexService {
    */
   getResponseMessages() {
     return this.getMIDIMessages().pipe(switchMap(({ data, from }) => {
-      if (data[0] === SOX[0] && data[1] === SOX[1] && data[data.length - 1] === EOX[0]) {
+      if (data[0] === SOX && data[1] === VENDOR && data[data.length - 1] === EOX) {
         // MIDI Message is a SysEx Message
 
         const [command, param1, param2, instr] = data.slice(2, 6);
 
         if (command === SYSEX_RESPONSE) {
           // Message is Response
-
           const decoded = this.decode(data.slice(6, data.length - 1));
           return of(this.dataToInstrument(decoded));
         }
       }
 
-      return empty();
+      return EMPTY;
     }));
   }
 
   /**
-   * Sets the current Instrument and send instrument request to the current MIDIOutput
+   * Sets the current instrument and send instrument request to the current MIDIOutput
+   * Also change program to current instrument
    * @param index Index range from 0 to 15
    */
 
@@ -158,6 +182,7 @@ export class SysexService {
 
     if (this.output) {
       this.sendRequestMessage(this.output);
+      this.sendProgramMessage(this.output, this.instrument);
     }
   }
 
@@ -346,12 +371,12 @@ export class SysexService {
 
   /**
    * Sends the waveform of the given operator
-   * @example 
-   *      0          1         2          3    
-   *   /\         /\        /\  /\     /|  /|  
-   *  /  \       /  \___   /  \/  \   / |_/ |_ 
-   *      \  /                                 
-   *       \/                                  
+   * @example
+   *      0          1         2          3
+   *   /\         /\        /\  /\     /|  /|
+   *  /  \       /  \___   /  \/  \   / |_/ |_
+   *      \  /
+   *       \/
    *
    * @param waveform Value between 0 and 3
    */
@@ -417,12 +442,13 @@ export class SysexService {
    * @param mask the bits which won't get overriden
    * @param value the bits for the new value
    */
-  sendParameterMessage(output: WebMidi.MIDIOutput, offset: number, mask: number, value: number) {
+  sendParameterMessage(output: WebMidi.Output, offset: number, mask: number, value: number) {
     const header = [SYSEX_PARAMETER, 0x00, 0x00, this.instrument];
     const data = this.encode([offset, mask, value]);
-    const sysexMessage = [...SOX, ...header, ...data, ...EOX];
-    this.outputMessages.next({ from: output, data: new Uint8Array(sysexMessage), time: new Date() });
-    output.send(sysexMessage);
+    const sysexMessage = [...header, ...data];
+    const time = WebMidi.default.time;
+    this.outputMessages.next({ from: output, data: new Uint8Array([SOX, VENDOR, ...sysexMessage, EOX]), time: new Date(time) });
+    output.sendSysex(VENDOR, sysexMessage);
   }
 
   /**
@@ -431,11 +457,51 @@ export class SysexService {
    * @param output MIDIOutput that should receive the message
    */
 
-  sendRequestMessage(output: WebMidi.MIDIOutput) {
+  sendRequestMessage(output: WebMidi.Output) {
     const header = [SYSEX_REQUEST, 0x00, 0x00, this.instrument];
-    const sysexMessage = [...SOX, ...header, ...EOX];
-    this.outputMessages.next({ from: output, data: new Uint8Array(sysexMessage), time: new Date() });
-    output.send(sysexMessage);
+    const sysexMessage = [...header];
+    const time = WebMidi.default.time;
+    this.outputMessages.next({ from: output, data: new Uint8Array([SOX, VENDOR, ...sysexMessage, EOX]), time: new Date(time) });
+    output.sendSysex(VENDOR, sysexMessage);
+  }
+
+  /**
+   * Sends a dump of the current instrument configuration to the MIDIOutput
+   *
+   * @param output MIDIOutput that should receive the message
+   */
+
+  sendDumpMessage(output: WebMidi.Output, instData: number[], instrument = this.instrument) {
+    const header = [SYSEX_INSTRUMENT, 0x00, 0x00, instrument];
+    const data = this.encode(instData);
+    const sysexMessage = [...header, ...data];
+    const time = WebMidi.default.time;
+    this.outputMessages.next({ from: output, data: new Uint8Array([SOX, VENDOR, ...sysexMessage, EOX]), time: new Date(time) });
+    output.sendSysex(VENDOR, sysexMessage);
+  }
+
+  sendBank(data: string) {
+    if (!this.output) {
+      throw new Error('MIDIOutput not set');
+    }
+
+    const instruments = data.split(/\n\r?/).map(line => line.split(' ').map(num => Number.parseInt(num, 16)));
+
+    for (let i = 0; i < Math.min(16, instruments.length); i++) {
+      this.sendDumpMessage(this.output, instruments[i], i);
+    }
+  }
+
+  sendInstrument(instrument: Instrument) {
+    if (!this.output) {
+      throw new Error('MIDIOutput not set');
+    }
+
+    this.sendDumpMessage(this.output, this.instrumentToData(instrument));
+  }
+
+  sendProgramMessage(output: WebMidi.Output, program: number) {
+    output.sendProgramChange(program, "all");
   }
 
   getDefaultInstrument(): Instrument {
@@ -510,30 +576,69 @@ export class SysexService {
     };
   }
 
+  instrumentToData(inst: Instrument): number[] {
+    const data = Array<number>(12);
+
+    for (let i = 0; i < data.length; i++) {
+      data[i] = 0;
+    }
+
+    data[0] ^= inst.drumChannel;
+    data[6] ^= inst.feedback << 1;
+    data[6] ^= +(!inst.frequencyModulation);
+
+    data[7] ^= +inst.carrier.tremolo << 7;
+    data[1] ^= +inst.modulator.tremolo << 7;
+    data[7] ^= +inst.carrier.vibrato << 6;
+    data[1] ^= +inst.modulator.vibrato << 6;
+    data[7] ^= +inst.carrier.sustaining << 5;
+    data[1] ^= +inst.modulator.sustaining << 5;
+    data[7] ^= +inst.carrier.envelopeScaling << 4;
+    data[1] ^= +inst.modulator.envelopeScaling << 4;
+    data[7] ^= inst.carrier.frequencyMultiplier;
+    data[1] ^= inst.modulator.frequencyMultiplier;
+    data[8] ^= inst.carrier.keyScale << 6;
+    data[2] ^= inst.modulator.keyScale << 6;
+    data[8] ^= (63 - inst.carrier.outputLevel);
+    data[2] ^= (63 - inst.modulator.outputLevel);
+    data[9] ^= inst.carrier.attack << 4;
+    data[3] ^= inst.modulator.attack << 4;
+    data[9] ^= inst.carrier.decay;
+    data[3] ^= inst.modulator.decay;
+    data[10] ^= (15 - inst.carrier.sustain) << 4;
+    data[4] ^= (15 - inst.modulator.sustain) << 4;
+    data[10] ^= inst.carrier.release;
+    data[4] ^= inst.modulator.release;
+    data[11] ^= inst.carrier.waveform;
+    data[5] ^= inst.modulator.waveform;
+
+    return data;
+  }
+
 
   /**
-   * The 8-bit file data needs to be converted to 7-bit form, with the result that 
-   * every 7 bytes of file data translates to 8 bytes in the MIDI stream. For each 
-   * group of 7 bytes (of file data) the top bit from each is used to construct an 
-   * eigth byte, which is sent first. 
-   * 
+   * The 8-bit file data needs to be converted to 7-bit form, with the result that
+   * every 7 bytes of file data translates to 8 bytes in the MIDI stream. For each
+   * group of 7 bytes (of file data) the top bit from each is used to construct an
+   * eigth byte, which is sent first.
+   *
    * plain:
    * `AAAAaaaa BBBBbbbb CCCCcccc DDDDdddd EEEEeeee FFFFffff GGGGgggg`
-   * 
+   *
    * encoded:
    * `0ABCDEFG 0AAAaaaa 0BBBbbbb 0CCCcccc 0DDDdddd 0EEEeeee 0FFFffff 0GGGgggg`
-   * 
-   * The final group may have less than 7 bytes, and is coded as follows 
+   *
+   * The final group may have less than 7 bytes, and is coded as follows
    * (e.g. with * 3 bytes in the final group):
    * `0ABC0000 0AAAaaaa 0BBBbbbb 0CCCcccc`
-   * 
+   *
    * @param data the byte array that should get encoded
    */
   encode(data: number[]): number[] {
     let outLength = 0;
     let count = 0;
     let ptr = 0;
-    let encoded = [0];
+    const encoded = [0];
 
     for (const byte of data) {
       const msb = byte >> 7;

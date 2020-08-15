@@ -51,15 +51,17 @@ body {
 }
 
 select {
-/*   -moz-appearance: none;
+  -moz-appearance: none;
   -webkit-appearance: none;
-  appearance: none; */
+  appearance: none;
   border: 2px solid black;
   height: 30px;
   width: 100%;
   font-weight: bold;
   font-size: 1.25rem;
   padding: 0 4px 2px;
+
+  background-color: white;
 
   &[disabled] {
     background-color: #d3d3d3;
@@ -71,4 +73,22 @@ option {
   border: 2px solid black;
   box-shadow: inset 0px 0px 0px 2px black;
   padding: 0 4px 2px;
+}
+
+button {
+     -moz-appearance: none;
+    -webkit-appearance: none;
+    appearance: none;
+    border: 2px solid black;
+    height: 30px;
+    width: 100%;
+    font-weight: bold;
+    font-size: 1.25rem;
+    padding: 0 4px 2px;
+    background-color: white;
+    cursor: pointer;
+  
+    &[disabled] {
+      background-color: #d3d3d3;
+    }
 }
