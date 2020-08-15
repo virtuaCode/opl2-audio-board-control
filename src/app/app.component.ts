@@ -13,7 +13,7 @@ import * as WebMidi from 'webmidi';
 })
 export class AppComponent implements OnInit, OnDestroy {
 
-  @ViewChild('textArea', { static: false })
+  @ViewChild('textArea')
   textArea?: ElementRef<HTMLTextAreaElement>;
 
   Operators = Operators;
