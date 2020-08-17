@@ -50,6 +50,23 @@ body {
   }
 }
 
+section {
+  border-radius: 0.5rem;
+  box-shadow: 10px 10px 0px 0px white;
+}
+
+dialog {
+  border-radius: 0.5rem;
+  border: 2px solid black;
+}
+
+option {
+  font-weight: bold;
+  border: 2px solid black;
+  box-shadow: inset 0px 0px 0px 2px black;
+  padding: 0 4px 2px;
+}
+
 select {
   -moz-appearance: none;
   -webkit-appearance: none;
@@ -68,12 +85,6 @@ select {
   }
 }
 
-option {
-  font-weight: bold;
-  border: 2px solid black;
-  box-shadow: inset 0px 0px 0px 2px black;
-  padding: 0 4px 2px;
-}
 
 button {
      -moz-appearance: none;

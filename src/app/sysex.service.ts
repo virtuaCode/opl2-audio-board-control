@@ -69,7 +69,7 @@ export class SysexService {
    * Returns a observable which returns true when both the MIDIOutput and MIDIInput are available
    */
   getInputOutputAvailable() {
-    return combineLatest(this.getOutputAvailable(), this.getInputAvailable()).pipe(map(arr => arr.every(a => a)));
+    return combineLatest([this.getOutputAvailable(), this.getInputAvailable()]).pipe(map(arr => arr.every(a => a)));
   }
 
   /**
@@ -176,13 +176,12 @@ export class SysexService {
    * Also change program to current instrument
    * @param index Index range from 0 to 15
    */
-
   setInstrument(index: number) {
     this.instrument = Math.max(Math.min(Math.round(index), 15), 0);
 
     if (this.output) {
-      this.sendRequestMessage(this.output);
-      this.sendProgramMessage(this.output, this.instrument);
+      this.sendRequestMessage();
+      this.sendProgramMessage(this.instrument);
     }
   }
 
@@ -191,18 +190,14 @@ export class SysexService {
    * @param rate Value between 0 (slowest) and 15 (fastest)
    * @param operator OPL2 Operator (Modulator | Carrier)
    */
-  async sendAttackRate(rate: number, operator: Operators) {
+  sendAttackRate(rate: number, operator: Operators) {
     if (rate < 0x00 || rate > 0x0F) {
       throw new Error('Invalid value for attack rate');
     }
 
-    if (!this.output) {
-      throw new Error('MIDIOutput not set');
-    }
-
     const offset = operator === Operators.Modulator ? 3 : 9;
 
-    this.sendParameterMessage(this.output, offset, 0x0F, rate << 4);
+    this.sendParameterMessage(offset, 0x0F, rate << 4);
   }
 
   /**
@@ -210,18 +205,14 @@ export class SysexService {
    * @param rate Value between 0 (slowest) and 15 (fastest)
    * @param operator OPL2 Operator (Modulator | Carrier)
    */
-  async sendDecayRate(rate: number, operator: Operators) {
+  sendDecayRate(rate: number, operator: Operators) {
     if (rate < 0x00 || rate > 0x0F) {
       throw new Error('Invalid value for decay rate');
     }
 
-    if (!this.output) {
-      throw new Error('MIDIOutput not set');
-    }
-
     const offset = operator === Operators.Modulator ? 3 : 9;
 
-    this.sendParameterMessage(this.output, offset, 0xF0, rate);
+    this.sendParameterMessage(offset, 0xF0, rate);
   }
 
   /**
@@ -229,18 +220,14 @@ export class SysexService {
    * @param level Value between 0 (softest) and 15 (loudest)
    * @param operator OPL2 Operator (Modulator | Carrier)
    */
-  async sendSustainLevel(level: number, operator: Operators) {
+  sendSustainLevel(level: number, operator: Operators) {
     if (level < 0x00 || level > 0x0F) {
       throw new Error('Invalid value for sustain level');
     }
 
-    if (!this.output) {
-      throw new Error('MIDIOutput not set');
-    }
-
     const offset = operator === Operators.Modulator ? 4 : 10;
 
-    this.sendParameterMessage(this.output, offset, 0x0F, (0xF - level) << 4);
+    this.sendParameterMessage(offset, 0x0F, (0xF - level) << 4);
   }
 
   /**
@@ -248,18 +235,14 @@ export class SysexService {
    * @param rate Value between 0 (slowest) and 15 (fastest)
    * @param operator OPL2 Operator (Modulator | Carrier)
    */
-  async sendReleaseRate(rate: number, operator: Operators) {
+  sendReleaseRate(rate: number, operator: Operators) {
     if (rate < 0x00 || rate > 0x0F) {
       throw new Error('Invalid value for release rate');
     }
 
-    if (!this.output) {
-      throw new Error('MIDIOutput not set');
-    }
-
     const offset = operator === Operators.Modulator ? 4 : 10;
 
-    this.sendParameterMessage(this.output, offset, 0xF0, rate);
+    this.sendParameterMessage(offset, 0xF0, rate);
   }
 
   /**
@@ -267,14 +250,10 @@ export class SysexService {
    * @param enabled Boolean value: false (off) and true (on)
    * @param operator OPL2 Operator (Modulator | Carrier)
    */
-  async sendSustaining(enabled: boolean, operator: Operators) {
-    if (!this.output) {
-      throw new Error('MIDIOutput not set');
-    }
-
+  sendSustaining(enabled: boolean, operator: Operators) {
     const offset = operator === Operators.Modulator ? 1 : 7;
 
-    this.sendParameterMessage(this.output, offset, 0xDF, +enabled << 5);
+    this.sendParameterMessage(offset, 0xDF, +enabled << 5);
   }
 
   /**
@@ -282,14 +261,10 @@ export class SysexService {
    * @param enabled Boolean value: false (off) and true (on)
    * @param operator OPL2 Operator (Modulator | Carrier)
    */
-  async sendEnvelopeScaling(enabled: boolean, operator: Operators) {
-    if (!this.output) {
-      throw new Error('MIDIOutput not set');
-    }
-
+  sendEnvelopeScaling(enabled: boolean, operator: Operators) {
     const offset = operator === Operators.Modulator ? 1 : 7;
 
-    this.sendParameterMessage(this.output, offset, 0xEF, +enabled << 4);
+    this.sendParameterMessage(offset, 0xEF, +enabled << 4);
   }
 
   /**
@@ -297,14 +272,10 @@ export class SysexService {
    * @param enabled Boolean value: false (off) and true (on)
    * @param operator OPL2 Operator (Modulator | Carrier)
    */
-  async sendTremolo(enabled: boolean, operator: Operators) {
-    if (!this.output) {
-      throw new Error('MIDIOutput not set');
-    }
-
+  sendTremolo(enabled: boolean, operator: Operators) {
     const offset = operator === Operators.Modulator ? 1 : 7;
 
-    this.sendParameterMessage(this.output, offset, 0x7F, +enabled << 7);
+    this.sendParameterMessage(offset, 0x7F, +enabled << 7);
   }
 
   /**
@@ -312,14 +283,10 @@ export class SysexService {
    * @param enabled Boolean value: false (off) and true (on)
    * @param operator OPL2 Operator (Modulator | Carrier)
    */
-  async sendVibrato(enabled: boolean, operator: Operators) {
-    if (!this.output) {
-      throw new Error('MIDIOutput not set');
-    }
-
+  sendVibrato(enabled: boolean, operator: Operators) {
     const offset = operator === Operators.Modulator ? 1 : 7;
 
-    this.sendParameterMessage(this.output, offset, 0xBF, +enabled << 6);
+    this.sendParameterMessage(offset, 0xBF, +enabled << 6);
   }
 
   /**
@@ -327,46 +294,35 @@ export class SysexService {
    * @param value Value between 0 and 15
    * @param operator OPL2 Operator (Modulator | Carrier)
    */
-  async sendFrequencyMultiplier(value: number, operator: Operators) {
+  sendFrequencyMultiplier(value: number, operator: Operators) {
     if (value < 0x00 || value > 0x0F) {
       throw new Error('Invalid value for frequency multiplier');
     }
 
-    if (!this.output) {
-      throw new Error('MIDIOutput not set');
-    }
-
     const offset = operator === Operators.Modulator ? 1 : 7;
 
-    this.sendParameterMessage(this.output, offset, 0xF0, value);
+    this.sendParameterMessage(offset, 0xF0, value);
   }
 
   /**
    * Sends the modulation feedback factor of the modulator
    * @param factor Value between 0 and 7
    */
-  async sendFeedbackLevel(factor: number) {
+  sendFeedbackLevel(factor: number) {
     if (factor < 0x00 || factor > 0x07) {
       throw new Error('Invalid value for modulation feedback factor');
     }
 
-    if (!this.output) {
-      throw new Error('MIDIOutput not set');
-    }
-
-    this.sendParameterMessage(this.output, 6, 0xF1, factor << 1);
+    this.sendParameterMessage(6, 0xF1, factor << 1);
   }
 
   /**
    * Sends synth mode (Frequency Modulation or Additive synthesis)
    * @param type true (FM) and false (AS)
    */
-  async sendSynthType(type: boolean) {
-    if (!this.output) {
-      throw new Error('MIDIOutput not set');
-    }
+  sendSynthType(type: boolean) {
 
-    this.sendParameterMessage(this.output, 6, 0xFE, +(!type));
+    this.sendParameterMessage(6, 0xFE, +(!type));
   }
 
   /**
@@ -380,18 +336,14 @@ export class SysexService {
    *
    * @param waveform Value between 0 and 3
    */
-  async sendWaveform(waveform: number, operator: Operators) {
+  sendWaveform(waveform: number, operator: Operators) {
     if (waveform < 0x00 || waveform > 0x03) {
       throw new Error('Invalid value for waveform');
     }
 
-    if (!this.output) {
-      throw new Error('MIDIOutput not set');
-    }
-
     const offset = operator === Operators.Modulator ? 5 : 11;
 
-    this.sendParameterMessage(this.output, offset, 0xF8, waveform);
+    this.sendParameterMessage(offset, 0xF8, waveform);
   }
 
   /**
@@ -399,18 +351,14 @@ export class SysexService {
    * @param level Value between 0 and 3
    * @param operator OPL2 Operator (Modulator | Carrier)
    */
-  async sendKeyScaleLevel(level: number, operator: Operators) {
+  sendKeyScaleLevel(level: number, operator: Operators) {
     if (level < 0x00 || level > 0x03) {
       throw new Error('Invalid value for key scale level');
     }
 
-    if (!this.output) {
-      throw new Error('MIDIOutput not set');
-    }
-
     const offset = operator === Operators.Modulator ? 2 : 8;
 
-    this.sendParameterMessage(this.output, offset, 0x3F, level << 6);
+    this.sendParameterMessage(offset, 0x3F, level << 6);
   }
 
   /**
@@ -418,18 +366,14 @@ export class SysexService {
    * @param level Value between 0 (softest) and 63 (loudest)
    * @param operator OPL2 Operator (Modulator | Carrier)
    */
-  async sendOutputLevel(level: number, operator: Operators) {
+  sendOutputLevel(level: number, operator: Operators) {
     if (level < 0x00 || level > 0x3F) {
       throw new Error('Invalid value for output level');
     }
 
-    if (!this.output) {
-      throw new Error('MIDIOutput not set');
-    }
-
     const offset = operator === Operators.Modulator ? 2 : 8;
 
-    this.sendParameterMessage(this.output, offset, 0xC0, 0x3F - level);
+    this.sendParameterMessage(offset, 0xC0, 0x3F - level);
   }
 
   /**
@@ -442,13 +386,17 @@ export class SysexService {
    * @param mask the bits which won't get overriden
    * @param value the bits for the new value
    */
-  sendParameterMessage(output: WebMidi.Output, offset: number, mask: number, value: number) {
+  sendParameterMessage(offset: number, mask: number, value: number) {
+    if (!this.output) {
+      throw new Error('MIDIOutput not set');
+    }
+
     const header = [SYSEX_PARAMETER, 0x00, 0x00, this.instrument];
     const data = this.encode([offset, mask, value]);
     const sysexMessage = [...header, ...data];
     const time = WebMidi.default.time;
-    this.outputMessages.next({ from: output, data: new Uint8Array([SOX, VENDOR, ...sysexMessage, EOX]), time: new Date(time) });
-    output.sendSysex(VENDOR, sysexMessage);
+    this.outputMessages.next({ from: this.output, data: new Uint8Array([SOX, VENDOR, ...sysexMessage, EOX]), time: new Date(time) });
+    this.output.sendSysex(VENDOR, sysexMessage);
   }
 
   /**
@@ -456,13 +404,16 @@ export class SysexService {
    *
    * @param output MIDIOutput that should receive the message
    */
+  sendRequestMessage() {
+    if (!this.output) {
+      throw new Error('MIDIOutput not set');
+    }
 
-  sendRequestMessage(output: WebMidi.Output) {
     const header = [SYSEX_REQUEST, 0x00, 0x00, this.instrument];
     const sysexMessage = [...header];
     const time = WebMidi.default.time;
-    this.outputMessages.next({ from: output, data: new Uint8Array([SOX, VENDOR, ...sysexMessage, EOX]), time: new Date(time) });
-    output.sendSysex(VENDOR, sysexMessage);
+    this.outputMessages.next({ from: this.output, data: new Uint8Array([SOX, VENDOR, ...sysexMessage, EOX]), time: new Date(time) });
+    this.output.sendSysex(VENDOR, sysexMessage);
   }
 
   /**
@@ -470,40 +421,61 @@ export class SysexService {
    *
    * @param output MIDIOutput that should receive the message
    */
+  sendDumpMessage(instData: number[], instrument = this.instrument, delay = 0) {
+    if (!this.output) {
+      throw new Error('MIDIOutput not set');
+    }
 
-  sendDumpMessage(output: WebMidi.Output, instData: number[], instrument = this.instrument) {
     const header = [SYSEX_INSTRUMENT, 0x00, 0x00, instrument];
     const data = this.encode(instData);
     const sysexMessage = [...header, ...data];
-    const time = WebMidi.default.time;
-    this.outputMessages.next({ from: output, data: new Uint8Array([SOX, VENDOR, ...sysexMessage, EOX]), time: new Date(time) });
-    output.sendSysex(VENDOR, sysexMessage);
+    const time = WebMidi.default.time + delay;
+    const output = this.output;
+
+    setTimeout(() => {
+      this.outputMessages.next({ from: output, data: new Uint8Array([SOX, VENDOR, ...sysexMessage, EOX]), time: new Date(time) });
+    }, delay);
+    this.output.sendSysex(VENDOR, sysexMessage, { time });
   }
 
-  sendBank(data: string) {
-    if (!this.output) {
-      throw new Error('MIDIOutput not set');
-    }
 
-    const instruments = data.split(/\n\r?/).map(line => line.split(' ').map(num => Number.parseInt(num, 16)));
-
-    for (let i = 0; i < Math.min(16, instruments.length); i++) {
-      this.sendDumpMessage(this.output, instruments[i], i);
+  /**
+   * Sends a list of instruments to the MIDIOuput
+   *
+   * @param instruments List of instruments to send to the MIDIOutput
+   */
+  sendBank(instruments: Instrument[]) {
+    for (let i = 0; i < instruments.length; i++) {
+      this.sendDumpMessage(this.instrumentToData(instruments[i]), i, 100 * i);
     }
   }
 
+  /**
+   * Sends an instrument to the current selected preset slot
+   *
+   * @param instrument the instrument
+   */
   sendInstrument(instrument: Instrument) {
+    this.sendDumpMessage(this.instrumentToData(instrument));
+  }
+
+  /**
+   * Send Program change to MIDIOutput
+   *
+   * @param output MIDIOutput that should receive the message
+   * @param program Program index
+   */
+  sendProgramMessage(program: number) {
     if (!this.output) {
       throw new Error('MIDIOutput not set');
     }
 
-    this.sendDumpMessage(this.output, this.instrumentToData(instrument));
+    this.output.sendProgramChange(program, 'all');
   }
 
-  sendProgramMessage(output: WebMidi.Output, program: number) {
-    output.sendProgramChange(program, "all");
-  }
-
+  /**
+   * Creates a new instrument with default configuration
+   */
   getDefaultInstrument(): Instrument {
     return {
       drumChannel: 0,
@@ -540,6 +512,11 @@ export class SysexService {
     };
   }
 
+  /**
+   * Converts register data into an instrument
+   *
+   * @param data unsigned 8 bit integer array
+   */
   dataToInstrument(data: number[]): Instrument {
     return {
       drumChannel: data[0],
@@ -576,6 +553,11 @@ export class SysexService {
     };
   }
 
+  /**
+   * Converts an instrument into 8bit register data
+   *
+   * @param inst the intrument to convert to 8bit register data
+   */
   instrumentToData(inst: Instrument): number[] {
     const data = Array<number>(12);
 

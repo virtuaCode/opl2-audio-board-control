@@ -17,6 +17,9 @@
         "build": {
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
+            "allowedCommonJsDependencies": [
+              "webmidi"
+            ],
             "outputPath": "docs",
             "index": "src/index.html",
             "main": "src/main.ts",
@@ -124,6 +127,7 @@
           }
         }
       }
-    }},
+    }
+  },
   "defaultProject": "audio-board-control"
 }

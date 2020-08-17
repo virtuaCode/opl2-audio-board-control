@@ -239,7 +239,7 @@
     </section>
 
 
-    <div class="columns">
+    <div style="margin-top: 0px;" class="columns">
       <section class="column configuration left">
         <div>
           <div class="columns">
@@ -283,9 +283,35 @@
             <div class="column">
             </div>
             <div class="column">
-              <input [disabled]="! (deviceAvailable | async)" type="file" (change)="onSendBank($event.target.files)"
-                placeholder="Upload Bank">
-              <!--<button (click)="onSendBank()">Upload Bank</button>-->
+              <button class="upload-button" [disabled]="! (deviceAvailable | async)">
+                <label for="file-upload">
+                  Open WOPL File
+                </label>
+              </button>
+              <input id="file-upload" accept=".wopl" [disabled]="! (deviceAvailable | async)" type="file"
+                (change)="onOpenBank($event.target.files);$event.target.value = ''">
+              <dialog id="banks-dialog" #dialog>
+                <div class="dialog-container">
+                  <div class="dialog-content">
+                    <select autofocus class="inst-select" id="inst-select" multiple
+                      (change)="onInstrumentSelected($event)">
+                      <optgroup *ngFor="let bank of banks | keyvalue" label="{{bank.key}}">
+                        <option [value]=index [label]=inst[0] *ngFor="let inst of bank.value; let index = index">
+                        </option>
+                      </optgroup>
+                    </select>
+                  </div>
+                  <div>
+                    <div class="label" id="instrument-num">
+                      {{numSelected}} Instrument{{numSelected === 1 ? '' : 's'}} selected
+                    </div>
+                  </div>
+                  <div class="dialog-buttons">
+                    <button id="cancel" (click)="onCancel()">Cancel</button>
+                    <button id="import" [disabled]="numSelected === 0" (click)="onImport()">Import</button>
+                  </div>
+                </div>
+              </dialog>
             </div>
           </div>
         </div>
@@ -298,8 +324,11 @@
 
       <!-- <section class="column log configuration">
       </section>-->
-      <textarea #textArea [value]="midiLogValue" readonly="readonly" class="column log configuration midi-log">
-          </textarea>
+      <section class="column configuration log">
+        <textarea #textArea [value]="midiLogValue" readonly="readonly" class="midi-log">
+        </textarea>
+
+      </section>
 
     </div>
   </div>

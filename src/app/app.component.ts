@@ -2,8 +2,11 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef, ElementRef, ViewChild 
 import { Operators, SysexService } from './sysex.service';
 import { FormControl } from '@angular/forms';
 import { Subscription } from 'rxjs';
-import { sprintf } from 'sprintf-js';
 import * as WebMidi from 'webmidi';
+import './models/instrument';
+import './models/message';
+import './models/operator';
+import { WoplService } from './wopl.service';
 
 
 @Component({
@@ -15,6 +18,9 @@ export class AppComponent implements OnInit, OnDestroy {
 
   @ViewChild('textArea')
   textArea?: ElementRef<HTMLTextAreaElement>;
+
+  @ViewChild('dialog')
+  dialog?: ElementRef<HTMLDialogElement>;
 
   Operators = Operators;
 
@@ -34,11 +40,17 @@ export class AppComponent implements OnInit, OnDestroy {
   midiMessageSub?: Subscription;
 
   errors: any[] = [];
+  banks: { [key: string]: [string, Instrument][] } = {};
   instruments: number[] = Array.from(new Array(16), (e, i) => i);
   instrument: Instrument = this.sysex.getDefaultInstrument();
+  selectedInstruments?: Instrument[];
   midiLogValue = '';
 
-  constructor(private readonly sysex: SysexService, private readonly ref: ChangeDetectorRef) { }
+  constructor(
+    private readonly sysex: SysexService,
+    private readonly wopl: WoplService,
+    private readonly ref: ChangeDetectorRef
+  ) { }
 
   ngOnInit(): void {
     this.sysex.initMIDI().catch(this.errorHandler.bind(this));
@@ -78,14 +90,14 @@ export class AppComponent implements OnInit, OnDestroy {
     });
 
     this.midiMessageSub = this.sysex.getSysExMessages().subscribe(({ from, time, data }) => {
-      const h = time.getHours();
-      const m = time.getMinutes();
-      const s = time.getSeconds();
-      const ms = time.getMilliseconds();
+      const h = time.getHours().toString().padStart(2, '0');
+      const m = time.getMinutes().toString().padStart(2, '0');
+      const s = time.getSeconds().toString().padStart(2, '0');
+      const ms = time.getMilliseconds().toString().padStart(3, '0');
 
-      this.midiLogValue += sprintf('%02d:%02d:%02d.%03d ', h, m, s, ms);
+      this.midiLogValue += `${h}:${m}:${s}.${ms}`;
       this.midiLogValue += `[${from.type === 'input' ? 'Input' : 'Output'}]\t`;
-      this.midiLogValue += Array.from(data).map(i => sprintf('%02X', i)).join(' ');
+      this.midiLogValue += Array.from(data).map(i => i.toString(16).padStart(2, '0')).join(' ');
       this.midiLogValue += '\n';
 
       if (this.textArea) {
@@ -125,65 +137,171 @@ export class AppComponent implements OnInit, OnDestroy {
     return this.sysex.getInputOutputAvailable();
   }
 
-  async onSendBank(files: File[]) {
+  get numSelected(): number {
+    return (this.selectedInstruments || []).length;
+  }
+
+  openDialog() {
+    if (this.dialog) {
+      this.dialog.nativeElement.showModal();
+    }
+  }
+
+  async onOpenBank(files: File[]) {
     const file = files[0];
-    this.sysex.sendBank(await file.text());
+    try {
+      this.banks = await this.wopl.parseWOPL(file);
+      this.openDialog();
+      this.selectedInstruments = [];
+    } catch (error) {
+      this.errorHandler(error);
+    }
+  }
+
+  onImport() {
+    if (this.selectedInstruments) {
+      this.sysex.sendBank(this.selectedInstruments);
+    }
+
+    if (this.dialog) {
+      this.dialog.nativeElement.close();
+    }
+  }
+
+  onCancel() {
+    if (this.dialog) {
+      this.dialog.nativeElement.close();
+    }
+  }
+
+  onInstrumentSelected(event: any) {
+    if (!this.banks) {
+      return;
+    }
+
+    const selected = Array.from<HTMLOptionElement>(event.target.selectedOptions).map((o: HTMLOptionElement) => {
+      return [(o.parentNode as HTMLOptGroupElement).label, Number.parseInt(o.value, 10)] as [string, number];
+    });
+
+    const instruments: Instrument[] = [];
+
+    for (const [key, index] of selected) {
+      instruments.push(this.banks[key][index][1]);
+    }
+
+    this.selectedInstruments = instruments;
   }
 
   onAttackRateChange(value: number, op: Operators) {
-    this.sysex.sendAttackRate(value, op).catch(this.errorHandler.bind(this));
+    try {
+      this.sysex.sendAttackRate(value, op);
+    } catch (err) {
+      this.errorHandler(err);
+    }
   }
 
   onDecayRateChange(value: number, op: Operators) {
-    this.sysex.sendDecayRate(value, op).catch(this.errorHandler.bind(this));
+    try {
+      this.sysex.sendDecayRate(value, op);
+    } catch (err) {
+      this.errorHandler(err);
+    }
   }
 
   onSustainLevelChange(value: number, op: Operators) {
-    this.sysex.sendSustainLevel(value, op).catch(this.errorHandler.bind(this));
+    try {
+      this.sysex.sendSustainLevel(value, op);
+    } catch (err) {
+      this.errorHandler(err);
+    }
   }
 
   onReleaseRateChange(value: number, op: Operators) {
-    this.sysex.sendReleaseRate(value, op).catch(this.errorHandler.bind(this));
+    try {
+      this.sysex.sendReleaseRate(value, op);
+    } catch (err) {
+      this.errorHandler(err);
+    }
   }
 
   onSustainingChange(value: boolean, op: Operators) {
-    this.sysex.sendSustaining(value, op).catch(this.errorHandler.bind(this));
+    try {
+      this.sysex.sendSustaining(value, op);
+    } catch (err) {
+      this.errorHandler(err);
+    }
   }
 
   onFrequenceMultiplierChange(value: number, op: Operators) {
-    this.sysex.sendFrequencyMultiplier(value, op).catch(this.errorHandler.bind(this));
+    try {
+      this.sysex.sendFrequencyMultiplier(value, op);
+    } catch (err) {
+      this.errorHandler(err);
+    }
   }
 
   onModulationFeedbackChange(value: number) {
-    this.sysex.sendFeedbackLevel(value).catch(this.errorHandler.bind(this));
+    try {
+      this.sysex.sendFeedbackLevel(value);
+    } catch (err) {
+      this.errorHandler(err);
+    }
   }
 
   onKeyScaleLevelChange(value: number, op: Operators) {
-    this.sysex.sendKeyScaleLevel(value, op).catch(this.errorHandler.bind(this));
+    try {
+      this.sysex.sendKeyScaleLevel(value, op);
+    } catch (err) {
+      this.errorHandler(err);
+    }
   }
 
   onSynthModeChange(value: boolean) {
-    this.sysex.sendSynthType(value).catch(this.errorHandler.bind(this));
+    try {
+      this.sysex.sendSynthType(value);
+    } catch (err) {
+      this.errorHandler(err);
+    }
   }
 
   onWaveformChange(value: number, op: Operators) {
-    this.sysex.sendWaveform(value, op).catch(this.errorHandler.bind(this));
+    try {
+      this.sysex.sendWaveform(value, op);
+    } catch (err) {
+      this.errorHandler(err);
+    }
   }
 
   onEnvelopeScalingChange(value: boolean, op: Operators) {
-    this.sysex.sendEnvelopeScaling(value, op).catch(this.errorHandler.bind(this));
+    try {
+      this.sysex.sendEnvelopeScaling(value, op);
+    } catch (err) {
+      this.errorHandler(err);
+    }
   }
 
   onVibratoChange(value: boolean, op: Operators) {
-    this.sysex.sendVibrato(value, op).catch(this.errorHandler.bind(this));
+    try {
+      this.sysex.sendVibrato(value, op);
+    } catch (err) {
+      this.errorHandler(err);
+    }
   }
 
   onTremoloChange(value: boolean, op: Operators) {
-    this.sysex.sendTremolo(value, op).catch(this.errorHandler.bind(this));
+    try {
+      this.sysex.sendTremolo(value, op);
+    } catch (err) {
+      this.errorHandler(err);
+    }
   }
 
   onOutputLevelChange(value: number, op: Operators) {
-    this.sysex.sendOutputLevel(value, op).catch(this.errorHandler.bind(this));
+    try {
+      this.sysex.sendOutputLevel(value, op);
+    } catch (err) {
+      this.errorHandler(err);
+    }
   }
 
   removeError(error: any) {
