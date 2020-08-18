@@ -1,0 +1,6 @@
+<div class="patches">
+    <button class="bank-item" (click)="onSelectBank(i)" [class.active]="i === bank"
+        *ngFor="let i of range(16)">{{i + 1}}</button>
+    <button class="patch-item" (click)="onSelectPatch(i)" [class.active]="i === patch"
+        *ngFor="let i of range(8)">{{i + 1}}</button>
+</div>

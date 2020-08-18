@@ -20,6 +20,9 @@ section.configuration, .midi-log {
     margin-right: 2rem;
   }
 }
+section.configuration.left {
+  overflow: hidden;
+}
 
 .opl2-title {
   text-align: center;
@@ -65,7 +68,6 @@ section.log {
   font-family: monospace;
   padding: 4px;
   margin: 0;
-  z-index: -1;
 }
 
 input[type=file] {

@@ -269,18 +269,7 @@
           </div>
           <div class="columns">
             <div class="column">
-              <div class="label">Instrument</div>
-            </div>
-            <div class="column">
-              <select [formControl]="instrumentControl">
-                <option *ngFor="let instr of instruments" [value]="instr">
-                  Instrument {{instr + 1}}
-                </option>
-              </select>
-            </div>
-          </div>
-          <div class="columns">
-            <div class="column">
+              <div class="label">Selected Intrument: {{instrumentIndex + 1}}</div>
             </div>
             <div class="column">
               <button class="upload-button" [disabled]="! (deviceAvailable | async)">
@@ -314,6 +303,7 @@
               </dialog>
             </div>
           </div>
+          <app-patch (instrument)="onInstrumentChange($event)" [current]="instrumentIndex"></app-patch>
         </div>
 
 

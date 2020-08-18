@@ -3,13 +3,15 @@ import { CommonModule } from '@angular/common';
 import { SliderComponent } from './slider/slider.component';
 import { ReactiveFormsModule } from '@angular/forms';
 import { CheckboxComponent } from './checkbox/checkbox.component';
+import { PatchComponent } from './patch/patch.component';
 
 
 
 @NgModule({
   declarations: [
     SliderComponent,
-    CheckboxComponent
+    CheckboxComponent,
+    PatchComponent
   ],
   imports: [
     CommonModule,
@@ -17,7 +19,8 @@ import { CheckboxComponent } from './checkbox/checkbox.component';
   ],
   exports: [
     SliderComponent,
-    CheckboxComponent
+    CheckboxComponent,
+    PatchComponent
   ]
 })
 export class ControlsModule { }

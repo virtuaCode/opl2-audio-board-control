@@ -43,6 +43,7 @@ export class AppComponent implements OnInit, OnDestroy {
   banks: { [key: string]: [string, Instrument][] } = {};
   instruments: number[] = Array.from(new Array(16), (e, i) => i);
   instrument: Instrument = this.sysex.getDefaultInstrument();
+  instrumentIndex = 0;
   selectedInstruments?: Instrument[];
   midiLogValue = '';
 
@@ -76,14 +77,15 @@ export class AppComponent implements OnInit, OnDestroy {
     this.availableSub = this.deviceAvailable.subscribe((available) => {
       if (available) {
         this.instrumentControl.enable();
+        this.sysex.sendRequestMessage();
       } else {
         this.instrumentControl.disable({ emitEvent: false });
       }
     });
 
-    this.instrumentSub = this.instrumentControl.valueChanges.subscribe(value => {
+    /*this.instrumentSub = this.instrumentControl.valueChanges.subscribe(value => {
       this.sysex.setInstrument(value);
-    });
+    });*/
 
     this.midiEventSub = this.sysex.getResponseMessages().subscribe(instrument => {
       this.instrument = instrument;
@@ -100,10 +102,10 @@ export class AppComponent implements OnInit, OnDestroy {
       this.midiLogValue += Array.from(data).map(i => i.toString(16).padStart(2, '0')).join(' ');
       this.midiLogValue += '\n';
 
+      this.ref.detectChanges();
       if (this.textArea) {
         this.textArea.nativeElement.scrollTop = this.textArea.nativeElement.scrollHeight;
       }
-      this.ref.detectChanges();
     });
   }
 
@@ -172,6 +174,11 @@ export class AppComponent implements OnInit, OnDestroy {
     if (this.dialog) {
       this.dialog.nativeElement.close();
     }
+  }
+
+  onInstrumentChange(num: number) {
+    this.sysex.setInstrument(num);
+    this.instrumentIndex = num;
   }
 
   onInstrumentSelected(event: any) {

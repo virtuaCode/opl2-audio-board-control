@@ -174,10 +174,10 @@ export class SysexService {
   /**
    * Sets the current instrument and send instrument request to the current MIDIOutput
    * Also change program to current instrument
-   * @param index Index range from 0 to 15
+   * @param index Index range from 0 to 127
    */
   setInstrument(index: number) {
-    this.instrument = Math.max(Math.min(Math.round(index), 15), 0);
+    this.instrument = Math.max(Math.min(Math.round(index), 127), 0);
 
     if (this.output) {
       this.sendRequestMessage();
